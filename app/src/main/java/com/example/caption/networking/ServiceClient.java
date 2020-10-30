@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by yi-ge
  * 2018-12-21 23:46
  */
-class ServiceClient implements Runnable
+class ServiceClient extends Thread
 {
     private static class MyHandler extends StompSessionHandlerAdapter
     {
@@ -53,7 +53,10 @@ class ServiceClient implements Runnable
 
         public void handleFrame(StompHeaders stompHeaders, Object o)
         {
-            Log.v(LOG_VERBOSE, "Received greeting " + new String((byte[]) o));
+//            Log.v(LOG_VERBOSE, "Received greeting " + new String((byte[]) o));
+            if(stop.get())
+                return;
+
             try
             {
                 Map<String, Object> m1 = mapper.readValue(new String((byte[]) o), Map.class);
@@ -86,6 +89,8 @@ class ServiceClient implements Runnable
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
     private final static WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
     private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean terminate = new AtomicBoolean(false);
+    private StompSession stompSession = null;
 
     public ServiceClient(ArrayAdapter<String> arrayAdapter)
     {
@@ -93,7 +98,7 @@ class ServiceClient implements Runnable
     }
 
 
-    public ListenableFuture<StompSession> connect()
+    private ListenableFuture<StompSession> connect()
     {
 
         Transport webSocketTransport = new WebSocketTransport(new StandardWebSocketClient());
@@ -110,32 +115,42 @@ class ServiceClient implements Runnable
         return stompClient.connect(url, headers, new MyHandler(), webPath, 23330);
     }
 
-    public void subscribeGreetings(StompSession stompSession) throws ExecutionException, InterruptedException
+    private void subscribeGreetings(StompSession stompSession) throws ExecutionException, InterruptedException
     {
         //TODO: change the topic
         stompSession.subscribe("/topic/test", new ClientStompFrameHandler());
         Log.v(LOG_VERBOSE, "subscribe done");
     }
 
-    public void stop()
+    public void stopClient()
     {
         stop.set(true);
+    }
+
+    public void resumeClient()
+    {
+        stop.set(false);
+    }
+
+    // need to call this first before run()
+    public boolean initConnection()
+    {
+        ListenableFuture<StompSession> f = this.connect();
+        try
+        {
+            stompSession = f.get();
+            return stompSession != null;
+        }
+        catch (InterruptedException | ExecutionException e)
+        {
+            Log.e(LOG_DEBUG, e.getMessage());
+            return false;
+        }
     }
 
     @Override
     public void run()
     {
-        ListenableFuture<StompSession> f = this.connect();
-        StompSession stompSession = null;
-        try
-        {
-            stompSession = f.get();
-        }
-        catch (InterruptedException | ExecutionException e)
-        {
-            Log.e(LOG_DEBUG, e.getMessage());
-        }
-
         Log.v(LOG_VERBOSE, "Subscribing to topic using session " + stompSession);
         try
         {
@@ -146,7 +161,7 @@ class ServiceClient implements Runnable
             Log.e(LOG_DEBUG, e.getMessage());
         }
 //        new Scanner(System.in).nextLine();
-        while (!stop.get())
+        while (!terminate.get())
         {
             try
             {
