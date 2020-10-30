@@ -1,5 +1,6 @@
 package com.example.caption;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -19,6 +20,7 @@ public class MainActivity extends AppCompatActivity
 {
     public static String TOPIC_KEY = "TOPIC_KEY";
     private static final String LOG_VERBOSE = "MainActivity VERBOSE";
+    private AlertDialog alertDialog;
     //    private WebSocketClient webSocketClient;
     private Button connectButton;
     private EditText topicInputText;
@@ -35,14 +37,21 @@ public class MainActivity extends AppCompatActivity
     {
         connectButton = findViewById(R.id.connectButton);
         topicInputText = findViewById(R.id.topicText);
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+        alertBuilder.setMessage("Please Enter the topic").setPositiveButton("OK",null);
+        alertDialog = alertBuilder.create();
         connectButton.setOnClickListener(view -> {
-            //TODO: need some checking
             Intent switchToSubtitleView = new Intent(this, SubtitleShowView.class);
             String topic = topicInputText.getText().toString();
             Log.v(LOG_VERBOSE, String.format("Clicked button, topic=%s", topic));
-            topicInputText.getText().clear();
-            switchToSubtitleView.putExtra(TOPIC_KEY, topic);
-            startActivity(switchToSubtitleView);
+            if(topic.length()==0)
+                alertDialog.show();
+            else
+            {
+                topicInputText.getText().clear();
+                switchToSubtitleView.putExtra(TOPIC_KEY, topic);
+                startActivity(switchToSubtitleView);
+            }
         });
 
     }
