@@ -8,3 +8,10 @@
 .externalNativeBuild
 .cxx
 ./gradle/
+/gradle/wrapper/gradle-wrapper.jar
+/gradle/wrapper/gradle-wrapper.properties
+/gradle.properties
+/gradlew
+/gradlew.bat
+/settings.gradle
+/app/proguard-rules.pro
