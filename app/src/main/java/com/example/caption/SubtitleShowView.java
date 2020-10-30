@@ -20,7 +20,7 @@ public class SubtitleShowView extends AppCompatActivity
     private static final String LOG_VERBOSE = "SubtitleShow VERBOSE";
     private String topic;
     private Button goBackButton;
-    private Button testButton;
+    private Button startButton;
     private ListView textList;
     private ServiceClient client;
     private AlertDialog alertDialog;
@@ -69,17 +69,19 @@ public class SubtitleShowView extends AppCompatActivity
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
         textList.setAdapter(arrayAdapter);
         initClientConnection(topic, arrayAdapter);
-        testButton = findViewById(R.id.startButton);
-        testButton.setOnClickListener(view -> {
+        startButton = findViewById(R.id.startButton);
+        startButton.setOnClickListener(button -> {
             if(!started)
             {
                 started = true;
                 client.resumeClient();
+                ((Button)button).setText("Stop");
             }
             else
             {
                 started = false;
                 client.stopClient();
+                ((Button)button).setText("Resume");
             }
         });
     }
