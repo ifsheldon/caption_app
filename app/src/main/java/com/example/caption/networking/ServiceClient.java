@@ -50,7 +50,7 @@ public class ServiceClient extends Thread
         public void handleFrame(StompHeaders stompHeaders, Object o)
         {
 //            Log.v(LOG_VERBOSE, "Received greeting " + new String((byte[]) o));
-            if(stop.get())
+            if (stop.get()||terminate.get())
                 return;
 
             try
@@ -84,7 +84,7 @@ public class ServiceClient extends Thread
     private final ArrayAdapter<String> arrayAdapter;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
     private final static WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
-    private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean stop = new AtomicBoolean(true);
     private final AtomicBoolean terminate = new AtomicBoolean(false);
     private StompSession stompSession = null;
 
@@ -126,6 +126,11 @@ public class ServiceClient extends Thread
     public void resumeClient()
     {
         stop.set(false);
+    }
+
+    public void terminate()
+    {
+        terminate.set(true);
     }
 
     // need to call this first before run()
