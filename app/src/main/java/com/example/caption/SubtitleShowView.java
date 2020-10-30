@@ -86,4 +86,10 @@ public class SubtitleShowView extends AppCompatActivity
         });
     }
 
+    @Override
+    public void onBackPressed()
+    {
+        goBackToMain();
+    }
+
 }
