@@ -28,7 +28,7 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class ServiceClient extends Thread
+public class ServiceClient extends Thread
 {
     private static class MyHandler extends StompSessionHandlerAdapter
     {
