@@ -10,13 +10,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Hello" />
+        android:text="Hello"
+        android:textSize="75dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
         <EditText
             android:id="@+id/topicText"
@@ -24,12 +25,14 @@
             android:layout_height="wrap_content"
             android:hint="Input topic"
             android:inputType="text"
+            android:textSize="45dp"
             android:maxLength="50" />
 
         <Button
             android:id="@+id/connectButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="30dp"
             android:text="Connect" />
 
     </LinearLayout>
