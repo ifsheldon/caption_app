@@ -7,11 +7,13 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.caption.networking.ServiceClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class SubtitleShowView extends AppCompatActivity
 {
@@ -20,6 +22,10 @@ public class SubtitleShowView extends AppCompatActivity
     private Button goBackButton;
     private Button testButton;
     private ListView textList;
+    private ServiceClient client;
+    private AlertDialog alertDialog;
+    private boolean started;
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -27,25 +33,54 @@ public class SubtitleShowView extends AppCompatActivity
         setContentView(R.layout.subtitle_view);
         Intent toSubtitleView = getIntent();
         topic = toSubtitleView.getStringExtra(MainActivity.TOPIC_KEY);
-        Log.v(LOG_VERBOSE,String.format("Got topic = %s\n",topic));
+        Log.v(LOG_VERBOSE, String.format("Got topic = %s\n", topic));
         initViewComponents();
+    }
+
+    private void initClientConnection(String topic, ArrayAdapter<String> arrayAdapter)
+    {
+        client = new ServiceClient(arrayAdapter);
+        boolean connected = client.initConnection();
+        if (!connected)
+            alertDialog.show();
+        client.start();
+    }
+
+    private void goBackToMain()
+    {
+        Intent goBack = new Intent(this, MainActivity.class);
+        client.terminate();
+        startActivity(goBack);
     }
 
     private void initViewComponents()
     {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+        String alertMsg = "Cannot connect";
+        alertBuilder.setMessage(alertMsg)
+                .setPositiveButton("Return to home page", (_a, _b) -> goBackToMain())
+                .setCancelable(false);
+        alertDialog = alertBuilder.create();
         goBackButton = findViewById(R.id.gbButton);
-        goBackButton.setOnClickListener(view->{
-            Intent goBack = new Intent(this, MainActivity.class);
-            startActivity(goBack);
-        });
+        goBackButton.setOnClickListener(_view -> goBackToMain());
         textList = findViewById(R.id.textList);
         String[] tes = {"Test1", "Test2"};
         ArrayList<String> test = new ArrayList<>(Arrays.asList(tes));
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
         textList.setAdapter(arrayAdapter);
-        testButton = findViewById(R.id.testButton);
-        testButton.setOnClickListener(view->{
-            arrayAdapter.add("Test Button Pressed");
+        initClientConnection(topic, arrayAdapter);
+        testButton = findViewById(R.id.startButton);
+        testButton.setOnClickListener(view -> {
+            if(!started)
+            {
+                started = true;
+                client.resumeClient();
+            }
+            else
+            {
+                started = false;
+                client.stopClient();
+            }
         });
     }
 
