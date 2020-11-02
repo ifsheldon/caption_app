@@ -6,7 +6,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,37 +20,40 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 
-import okhttp3.WebSocket;
-import ua.naiksoftware.stomp.Stomp;
-import ua.naiksoftware.stomp.StompClient;
-
-
 public class SubtitleShowView extends AppCompatActivity
 {
     private static final String LOG_VERBOSE = "SubtitleShow VERBOSE";
     private String topic;
+    private String serverAddr;
+    private String serverPort;
     private Button goBackButton;
     private Button startButton;
-    private ListView textList;
+    private TextView textView;
     private ServiceClient client;
     private AlertDialog alertDialog;
+    private SeekBar fontSizeSeekBar;
     private boolean started;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.subtitle_view);
+        setContentView(R.layout.subtitle_view_textview);
         Intent toSubtitleView = getIntent();
         topic = toSubtitleView.getStringExtra(MainActivity.TOPIC_KEY);
+        serverAddr = toSubtitleView.getStringExtra(MainActivity.SERVER_ADDR_KEY);
+        serverPort = toSubtitleView.getStringExtra(MainActivity.PORT_KEY);
+        Log.v("port", serverPort);
+        Log.v("serverAddr", serverAddr);
         Log.v(LOG_VERBOSE, String.format("Got topic = %s\n", topic));
         initViewComponents();
     }
 
     private void initClientConnection(String topic, ArrayAdapter<String> arrayAdapter)
     {
-        client = new ServiceClient(arrayAdapter);
-        boolean connected = client.initConnection(topic);
+        Log.d(serverAddr,serverPort);
+        client = new ServiceClient(arrayAdapter, textView);
+        boolean connected = client.initConnection(topic, serverAddr, Integer.parseInt(serverPort));
         if (!connected)
             alertDialog.show();
         client.start();
@@ -73,11 +77,31 @@ public class SubtitleShowView extends AppCompatActivity
         alertDialog = alertBuilder.create();
         goBackButton = findViewById(R.id.gbButton);
         goBackButton.setOnClickListener(_view -> goBackToMain());
-        textList = findViewById(R.id.textList);
-        String[] tes = {"Test1", "Test2"};
+        textView = findViewById(R.id.textView);
+        fontSizeSeekBar = findViewById(R.id.fontSizeSeekBar);
+        String[] tes = {"PlaceHolder1", "PlaceHolder2"};
         ArrayList<String> test = new ArrayList<>(Arrays.asList(tes));
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
-        textList.setAdapter(arrayAdapter);
+//        textList.setAdapter(arrayAdapter);
+
+
+        fontSizeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                textView.setTextSize(i);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
 
         initClientConnection(topic, arrayAdapter);
         startButton = findViewById(R.id.startButton);

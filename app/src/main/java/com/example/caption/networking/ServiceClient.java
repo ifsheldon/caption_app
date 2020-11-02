@@ -3,9 +3,12 @@ package com.example.caption.networking;
 import android.annotation.SuppressLint;
 import android.util.Log;
 import android.widget.ArrayAdapter;
+import android.widget.TextView;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.Map;
@@ -20,8 +23,8 @@ import ua.naiksoftware.stomp.StompClient;
 
 @SuppressLint("CheckResult")
 public class ServiceClient extends Thread implements IServerClient {
-    private final String SERVER_ADDR = "10.0.2.2";
-    private final int PORT = 23330;
+    private String SERVER_ADDR = "10.0.2.2";
+    private int PORT = 23330;
 
 //    private static class MyHandler extends StompSessionHandlerAdapter {
 //        public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
@@ -65,6 +68,7 @@ public class ServiceClient extends Thread implements IServerClient {
     private static final String LOG_VERBOSE = "Client VERBOSE";
     private static final String LOG_DEBUG = "Client DEBOG";
     private final ArrayAdapter<String> arrayAdapter;
+    private final TextView textView;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
     private final AtomicBoolean stop = new AtomicBoolean(true);
     private final AtomicBoolean terminate = new AtomicBoolean(false);
@@ -74,8 +78,9 @@ public class ServiceClient extends Thread implements IServerClient {
 
     private StompClient mStompClient;
 
-    public ServiceClient(ArrayAdapter<String> arrayAdapter) {
+    public ServiceClient(ArrayAdapter<String> arrayAdapter, TextView textView) {
         this.arrayAdapter = arrayAdapter;
+        this.textView = textView;
     }
 
     public void stopClient() {
@@ -92,11 +97,15 @@ public class ServiceClient extends Thread implements IServerClient {
 
     // need to call this first before run()
 
-    public boolean initConnection(String topic) {
+    public boolean initConnection(String topic, String serverAddr, int serverPort) {
 
         this.topic = topic;
+        this.SERVER_ADDR = serverAddr;
+        this.PORT = serverPort;
 
-        mStompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://10.20.173.64:23330/gs-guide-websocket/websocket");
+        String connectionURL = String.format("ws://%s:%d/gs-guide-websocket/websocket", this.SERVER_ADDR, this.PORT);
+
+        mStompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, connectionURL);
 
         AtomicBoolean connectSuccess = new AtomicBoolean(true);
 
@@ -149,8 +158,9 @@ public class ServiceClient extends Thread implements IServerClient {
                         subtitleStorage.add(text, true);
                     }
                     //TODO: check whether it works
-                    arrayAdapter.clear();
-                    arrayAdapter.add(subtitleStorage.get());
+//                    arrayAdapter.clear();
+//                    arrayAdapter.add(subtitleStorage.get());
+                    textView.setText(subtitleStorage.get());
                 } else {
                     Log.v(LOG_VERBOSE, "Not subtitle!");
                 }
