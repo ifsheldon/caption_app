@@ -1,5 +1,6 @@
 package com.example.caption;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,10 +11,18 @@ import android.widget.ListView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+//import com.example.caption.networking.ServiceClient;
+
 import com.example.caption.networking.ServiceClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+
+
+import okhttp3.WebSocket;
+import ua.naiksoftware.stomp.Stomp;
+import ua.naiksoftware.stomp.StompClient;
+
 
 public class SubtitleShowView extends AppCompatActivity
 {
@@ -40,7 +49,7 @@ public class SubtitleShowView extends AppCompatActivity
     private void initClientConnection(String topic, ArrayAdapter<String> arrayAdapter)
     {
         client = new ServiceClient(arrayAdapter);
-        boolean connected = client.initConnection();
+        boolean connected = client.initConnection(topic);
         if (!connected)
             alertDialog.show();
         client.start();
@@ -53,6 +62,7 @@ public class SubtitleShowView extends AppCompatActivity
         startActivity(goBack);
     }
 
+    @SuppressLint("CheckResult")
     private void initViewComponents()
     {
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
@@ -68,6 +78,7 @@ public class SubtitleShowView extends AppCompatActivity
         ArrayList<String> test = new ArrayList<>(Arrays.asList(tes));
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
         textList.setAdapter(arrayAdapter);
+
         initClientConnection(topic, arrayAdapter);
         startButton = findViewById(R.id.startButton);
         startButton.setOnClickListener(button -> {

@@ -1,176 +1,180 @@
 package com.example.caption.networking;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.springframework.messaging.simp.stomp.StompFrameHandler;
-import org.springframework.messaging.simp.stomp.StompHeaders;
-import org.springframework.messaging.simp.stomp.StompSession;
-import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.web.socket.WebSocketHttpHeaders;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.messaging.WebSocketStompClient;
-import org.springframework.web.socket.sockjs.client.SockJsClient;
-import org.springframework.web.socket.sockjs.client.Transport;
-import org.springframework.web.socket.sockjs.client.WebSocketTransport;
-import org.springframework.web.socket.sockjs.frame.Jackson2SockJsMessageCodec;
-
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 
-public class ServiceClient extends Thread
-{
-    private static class MyHandler extends StompSessionHandlerAdapter
-    {
-        public void afterConnected(StompSession stompSession, StompHeaders stompHeaders)
-        {
-            Log.v(LOG_VERBOSE, "Now connected");
-        }
-    }
+import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
+import ua.naiksoftware.stomp.Stomp;
+import ua.naiksoftware.stomp.StompClient;
 
-    private class ClientStompFrameHandler implements StompFrameHandler
-    {
-        final ObjectMapper mapper = new ObjectMapper();
+@SuppressLint("CheckResult")
+public class ServiceClient extends Thread implements IServerClient {
+    private final String SERVER_ADDR = "10.0.2.2";
+    private final int PORT = 23330;
 
-        public Type getPayloadType(StompHeaders stompHeaders)
-        {
-            return byte[].class;
-        }
-
-        public void handleFrame(StompHeaders stompHeaders, Object o)
-        {
-//            Log.v(LOG_VERBOSE, "Received greeting " + new String((byte[]) o));
-            if (stop.get()||terminate.get())
-                return;
-
-            try
-            {
-                Map<String, Object> m1 = mapper.readValue(new String((byte[]) o), Map.class);
-                Log.v(LOG_VERBOSE, m1.toString());
-                String eventName = ((Map<String, Object>) m1.get("header")).get("name").toString();
-                // get subtitles here
-                String text = ((Map<String, Object>) m1.get("payload")).get("result").toString();
-
-                if ("TranscriptionResultChanged".equals(eventName))
-                {
-                    subtitleStorage.add(text, false);
-                } else if ("SentenceEnd".equals(eventName))
-                {
-                    subtitleStorage.add(text, true);
-                }
-                //TODO: check whether it works
-                arrayAdapter.add(subtitleStorage.get());
-            }
-            catch (IOException e)
-            {
-                Log.e(LOG_DEBUG, e.getMessage());
-            }
-        }
-
-    }
+//    private static class MyHandler extends StompSessionHandlerAdapter {
+//        public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
+//            Log.v(LOG_VERBOSE, "Now connected");
+//        }
+//    }
+//
+//    private class ClientStompFrameHandler implements StompFrameHandler {
+//        final ObjectMapper mapper = new ObjectMapper();
+//
+//        public Type getPayloadType(StompHeaders stompHeaders) {
+//            return byte[].class;
+//        }
+//
+//        public void handleFrame(StompHeaders stompHeaders, Object o) {
+////            Log.v(LOG_VERBOSE, "Received greeting " + new String((byte[]) o));
+//            if (stop.get() || terminate.get())
+//                return;
+//
+//            try {
+//                Map<String, Object> m1 = mapper.readValue(new String((byte[]) o), Map.class);
+//                Log.v(LOG_VERBOSE, m1.toString());
+//                String eventName = ((Map<String, Object>) m1.get("header")).get("name").toString();
+//                // get subtitles here
+//                String text = ((Map<String, Object>) m1.get("payload")).get("result").toString();
+//
+//                if ("TranscriptionResultChanged".equals(eventName)) {
+//                    subtitleStorage.add(text, false);
+//                } else if ("SentenceEnd".equals(eventName)) {
+//                    subtitleStorage.add(text, true);
+//                }
+//                //TODO: check whether it works
+//                arrayAdapter.add(subtitleStorage.get());
+//            } catch (IOException e) {
+//                Log.e(LOG_DEBUG, e.getMessage());
+//            }
+//        }
+//
+//    }
 
     private static final String LOG_VERBOSE = "Client VERBOSE";
     private static final String LOG_DEBUG = "Client DEBOG";
     private final ArrayAdapter<String> arrayAdapter;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
-    private final static WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
     private final AtomicBoolean stop = new AtomicBoolean(true);
     private final AtomicBoolean terminate = new AtomicBoolean(false);
-    private StompSession stompSession = null;
 
-    public ServiceClient(ArrayAdapter<String> arrayAdapter)
-    {
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private String topic;
+
+    private StompClient mStompClient;
+
+    public ServiceClient(ArrayAdapter<String> arrayAdapter) {
         this.arrayAdapter = arrayAdapter;
     }
 
-
-    private ListenableFuture<StompSession> connect()
-    {
-
-        Transport webSocketTransport = new WebSocketTransport(new StandardWebSocketClient());
-        List<Transport> transports = Collections.singletonList(webSocketTransport);
-
-        SockJsClient sockJsClient = new SockJsClient(transports);
-        sockJsClient.setMessageCodec(new Jackson2SockJsMessageCodec());
-
-        WebSocketStompClient stompClient = new WebSocketStompClient(sockJsClient);
-
-        String url = "ws://{host}:{port}/gs-guide-websocket";
-        // TODO: notice this special path for Android virtual device
-        String webPath = "10.0.2.2";
-        return stompClient.connect(url, headers, new MyHandler(), webPath, 23330);
-    }
-
-    private void subscribeGreetings(StompSession stompSession) throws ExecutionException, InterruptedException
-    {
-        //TODO: change the topic
-        stompSession.subscribe("/topic/test", new ClientStompFrameHandler());
-        Log.v(LOG_VERBOSE, "subscribe done");
-    }
-
-    public void stopClient()
-    {
+    public void stopClient() {
         stop.set(true);
     }
 
-    public void resumeClient()
-    {
+    public void resumeClient() {
         stop.set(false);
     }
 
-    public void terminate()
-    {
+    public void terminate() {
         terminate.set(true);
     }
 
     // need to call this first before run()
-    public boolean initConnection()
-    {
-        ListenableFuture<StompSession> f = this.connect();
-        try
+
+    public boolean initConnection(String topic) {
+
+        this.topic = topic;
+
+        mStompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, "ws://10.20.173.64:23330/gs-guide-websocket/websocket");
+
+        AtomicBoolean connectSuccess = new AtomicBoolean(true);
+
+        mStompClient.lifecycle().subscribe(lifecycleEvent -> {
+            switch (lifecycleEvent.getType()) {
+
+                case OPENED:
+                    Log.d(LOG_VERBOSE, "Stomp connection opened");
+                    break;
+
+                case ERROR:
+                    Log.e(LOG_VERBOSE, "Error", lifecycleEvent.getException());
+                    connectSuccess.set(false);
+                    break;
+
+                case CLOSED:
+                    Log.d(LOG_VERBOSE, "Stomp connection closed");
+                    break;
+            }
+        });
+
+        mStompClient.connect();
+
+        return connectSuccess.get();
+    }
+
+    private void subscribe(String topic){
+        mStompClient.topic("/topic/" + topic)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(topicMessage ->
+
         {
-            stompSession = f.get();
-            return stompSession != null;
-        }
-        catch (InterruptedException | ExecutionException e)
-        {
-            Log.e(LOG_DEBUG, e.getMessage());
-            return false;
-        }
+
+            Log.i(LOG_VERBOSE, topicMessage.getPayload());
+
+            if (stop.get() || terminate.get())
+                return;
+
+            try {
+                Map<String, Object> m1 = objectMapper.readValue(topicMessage.getPayload(), Map.class);
+                Log.v(LOG_VERBOSE, m1.toString());
+                if (m1.containsKey("header")){
+                    String eventName = ((Map<String, Object>) m1.get("header")).get("name").toString();
+                    String text = ((Map<String, Object>) m1.get("payload")).get("result").toString();
+
+                    if ("TranscriptionResultChanged".equals(eventName)) {
+                        subtitleStorage.add(text, false);
+                    } else if ("SentenceEnd".equals(eventName)) {
+                        subtitleStorage.add(text, true);
+                    }
+                    //TODO: check whether it works
+                    arrayAdapter.clear();
+                    arrayAdapter.add(subtitleStorage.get());
+                } else {
+                    Log.v(LOG_VERBOSE, "Not subtitle!");
+                }
+
+            } catch (IOException e) {
+                Log.e(LOG_DEBUG, e.getMessage());
+            }
+
+
+        }, throwable -> {
+            Log.e(LOG_DEBUG, "err!", throwable);
+        });
     }
 
     @Override
-    public void run()
-    {
-        Log.v(LOG_VERBOSE, "Subscribing to topic using session " + stompSession);
-        try
-        {
-            this.subscribeGreetings(stompSession);
-        }
-        catch (ExecutionException | InterruptedException e)
-        {
-            Log.e(LOG_DEBUG, e.getMessage());
-        }
-//        new Scanner(System.in).nextLine();
-        while (!terminate.get())
-        {
-            try
-            {
-                Thread.sleep(100);
-            }
-            catch (InterruptedException ignored)
-            {
-            }
-        }
+    public void run() {
+        Log.v(LOG_VERBOSE, "Subscribing to topic using session " + mStompClient);
+        this.subscribe(topic);
+
+//        while (!terminate.get()) {
+//            try {
+//                Thread.sleep(100);
+//            } catch (InterruptedException ignored) {
+//            }
+//        }
     }
 }
