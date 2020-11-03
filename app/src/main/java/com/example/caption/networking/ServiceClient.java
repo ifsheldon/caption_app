@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
 import io.reactivex.Scheduler;
@@ -22,51 +23,13 @@ import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;
 
 @SuppressLint("CheckResult")
-public class ServiceClient extends Thread implements IServerClient {
+public class ServiceClient extends Thread implements IServerClient
+{
     private String SERVER_ADDR = "10.0.2.2";
     private int PORT = 23330;
 
-//    private static class MyHandler extends StompSessionHandlerAdapter {
-//        public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
-//            Log.v(LOG_VERBOSE, "Now connected");
-//        }
-//    }
-//
-//    private class ClientStompFrameHandler implements StompFrameHandler {
-//        final ObjectMapper mapper = new ObjectMapper();
-//
-//        public Type getPayloadType(StompHeaders stompHeaders) {
-//            return byte[].class;
-//        }
-//
-//        public void handleFrame(StompHeaders stompHeaders, Object o) {
-////            Log.v(LOG_VERBOSE, "Received greeting " + new String((byte[]) o));
-//            if (stop.get() || terminate.get())
-//                return;
-//
-//            try {
-//                Map<String, Object> m1 = mapper.readValue(new String((byte[]) o), Map.class);
-//                Log.v(LOG_VERBOSE, m1.toString());
-//                String eventName = ((Map<String, Object>) m1.get("header")).get("name").toString();
-//                // get subtitles here
-//                String text = ((Map<String, Object>) m1.get("payload")).get("result").toString();
-//
-//                if ("TranscriptionResultChanged".equals(eventName)) {
-//                    subtitleStorage.add(text, false);
-//                } else if ("SentenceEnd".equals(eventName)) {
-//                    subtitleStorage.add(text, true);
-//                }
-//                //TODO: check whether it works
-//                arrayAdapter.add(subtitleStorage.get());
-//            } catch (IOException e) {
-//                Log.e(LOG_DEBUG, e.getMessage());
-//            }
-//        }
-//
-//    }
-
     private static final String LOG_VERBOSE = "Client VERBOSE";
-    private static final String LOG_DEBUG = "Client DEBOG";
+    private static final String LOG_DEBUG = "Client DEBUG";
     private final ArrayAdapter<String> arrayAdapter;
     private final TextView textView;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
@@ -78,26 +41,30 @@ public class ServiceClient extends Thread implements IServerClient {
 
     private StompClient mStompClient;
 
-    public ServiceClient(ArrayAdapter<String> arrayAdapter, TextView textView) {
+    public ServiceClient(ArrayAdapter<String> arrayAdapter, TextView textView)
+    {
         this.arrayAdapter = arrayAdapter;
         this.textView = textView;
     }
 
-    public void stopClient() {
+    public void stopClient()
+    {
         stop.set(true);
     }
 
-    public void resumeClient() {
+    public void resumeClient()
+    {
         stop.set(false);
     }
 
-    public void terminate() {
+    public void terminate()
+    {
         terminate.set(true);
     }
 
     // need to call this first before run()
-
-    public boolean initConnection(String topic, String serverAddr, int serverPort) {
+    public boolean initConnection(String topic, String serverAddr, int serverPort)
+    {
 
         this.topic = topic;
         this.SERVER_ADDR = serverAddr;
@@ -110,7 +77,8 @@ public class ServiceClient extends Thread implements IServerClient {
         AtomicBoolean connectSuccess = new AtomicBoolean(true);
 
         mStompClient.lifecycle().subscribe(lifecycleEvent -> {
-            switch (lifecycleEvent.getType()) {
+            switch (lifecycleEvent.getType())
+            {
 
                 case OPENED:
                     Log.d(LOG_VERBOSE, "Stomp connection opened");
@@ -132,59 +100,53 @@ public class ServiceClient extends Thread implements IServerClient {
         return connectSuccess.get();
     }
 
-    private void subscribe(String topic){
+    private void subscribe(String topic)
+    {
         mStompClient.topic("/topic/" + topic)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(topicMessage ->
+                .subscribe(topicMessage -> {
+                    Log.i(LOG_VERBOSE, topicMessage.getPayload());
+                    if (stop.get() || terminate.get())
+                        return;
 
-        {
+                    try
+                    {
+                        Map<String, Object> m1 = objectMapper.readValue(topicMessage.getPayload(), Map.class);
+                        Log.v(LOG_VERBOSE, m1.toString());
+                        if (m1.containsKey("header"))
+                        {
+                            String eventName = ((Map<String, Object>) m1.get("header")).get("name").toString();
+                            String text = ((Map<String, Object>) m1.get("payload")).get("result").toString();
 
-            Log.i(LOG_VERBOSE, topicMessage.getPayload());
-
-            if (stop.get() || terminate.get())
-                return;
-
-            try {
-                Map<String, Object> m1 = objectMapper.readValue(topicMessage.getPayload(), Map.class);
-                Log.v(LOG_VERBOSE, m1.toString());
-                if (m1.containsKey("header")){
-                    String eventName = ((Map<String, Object>) m1.get("header")).get("name").toString();
-                    String text = ((Map<String, Object>) m1.get("payload")).get("result").toString();
-
-                    if ("TranscriptionResultChanged".equals(eventName)) {
-                        subtitleStorage.add(text, false);
-                    } else if ("SentenceEnd".equals(eventName)) {
-                        subtitleStorage.add(text, true);
-                    }
-                    //TODO: check whether it works
+                            if ("TranscriptionResultChanged".equals(eventName))
+                            {
+                                subtitleStorage.add(text, false);
+                            } else if ("SentenceEnd".equals(eventName))
+                            {
+                                subtitleStorage.add(text, true);
+                            }
+                            //TODO: check whether it works
 //                    arrayAdapter.clear();
 //                    arrayAdapter.add(subtitleStorage.get());
-                    textView.setText(subtitleStorage.get());
-                } else {
-                    Log.v(LOG_VERBOSE, "Not subtitle!");
-                }
+                            textView.setText(subtitleStorage.get());
+                        } else
+                        {
+                            Log.v(LOG_VERBOSE, "Not subtitle!");
+                        }
 
-            } catch (IOException e) {
-                Log.e(LOG_DEBUG, e.getMessage());
-            }
-
-
-        }, throwable -> {
-            Log.e(LOG_DEBUG, "err!", throwable);
-        });
+                    }
+                    catch (IOException e)
+                    {
+                        Log.e(LOG_DEBUG, e.getMessage());
+                    }
+                }, throwable -> Log.e(LOG_DEBUG, "err!", throwable));
     }
 
     @Override
-    public void run() {
+    public void run()
+    {
         Log.v(LOG_VERBOSE, "Subscribing to topic using session " + mStompClient);
         this.subscribe(topic);
-
-//        while (!terminate.get()) {
-//            try {
-//                Thread.sleep(100);
-//            } catch (InterruptedException ignored) {
-//            }
-//        }
     }
 }
