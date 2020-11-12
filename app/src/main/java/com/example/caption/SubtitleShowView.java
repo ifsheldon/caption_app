@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class SubtitleShowView extends AppCompatActivity
 {
-    private static final boolean TESTING = true;
+    private static final boolean TESTING = false;
     private static final String LOG_VERBOSE = "SubtitleShow VERBOSE";
     private String topic;
     private String serverAddr;
