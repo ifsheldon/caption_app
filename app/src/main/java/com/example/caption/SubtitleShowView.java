@@ -8,15 +8,16 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
-//import com.example.caption.networking.ServiceClient;
 
 import com.example.caption.networking.ServiceClient;
 
@@ -39,6 +40,7 @@ public class SubtitleShowView extends AppCompatActivity
     private SeekBar subTitleSizeSeekBar;
     private boolean started;
     private AlertDialog settingDialog;
+    private ListView textList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -78,6 +80,12 @@ public class SubtitleShowView extends AppCompatActivity
     @SuppressLint("CheckResult")
     private void initViewComponents()
     {
+        String[] tes = {"PlaceHolder1", "PlaceHolder2"};
+        ArrayList<String> test = new ArrayList<>(Arrays.asList(tes));
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
+        textList = findViewById(R.id.textList);
+        textList.setAdapter(arrayAdapter);
+
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
         String alertMsg = "Cannot connect";
         alertBuilder.setMessage(alertMsg)
@@ -86,20 +94,16 @@ public class SubtitleShowView extends AppCompatActivity
         alertDialog = alertBuilder.create();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Settings");
-        builder.setPositiveButton("OK", null);
         LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View dialogView = inflater.inflate(R.layout.setting_dialog, null);
-        builder.setView(dialogView);
-        settingDialog = builder.create();
-
-        Button settingButton = findViewById(R.id.setting_button);
-        settingButton.setOnClickListener(v -> settingDialog.show());
-
-        goBackButton = findViewById(R.id.gbButton);
-        goBackButton.setOnClickListener(_view -> goBackToMain());
-        textView = findViewById(R.id.textView);
         TextView demonstration_text = dialogView.findViewById(R.id.font_size_demonstration);
+        Switch screenSwitch = dialogView.findViewById(R.id.screen_on_switch);
+        screenSwitch.setOnCheckedChangeListener((_buttonView, isChecked) -> {
+            if (isChecked)
+                this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            else
+                this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        });
         subTitleSizeSeekBar = dialogView.findViewById(R.id.subtitle_size_seekbar);
         subTitleSizeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
         {
@@ -112,19 +116,32 @@ public class SubtitleShowView extends AppCompatActivity
             @Override
             public void onStartTrackingTouch(SeekBar seekBar)
             {
-
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar)
             {
-
             }
         });
-        String[] tes = {"PlaceHolder1", "PlaceHolder2"};
-        ArrayList<String> test = new ArrayList<>(Arrays.asList(tes));
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
+        builder.setTitle("Settings");
+        builder.setPositiveButton("OK", (_dialog, _which) -> {
+            for (int i = 0; i < textList.getChildCount(); i++)
+            {
+                TextView v = (TextView) textList.getChildAt(i);
+                v.setTextSize(TypedValue.COMPLEX_UNIT_DIP, subTitleSizeSeekBar.getProgress());
+            }
+        });
+        builder.setCancelable(false);
+        builder.setNegativeButton("Cancel", null);
+        builder.setView(dialogView);
+        settingDialog = builder.create();
 
+        Button settingButton = findViewById(R.id.setting_button);
+        settingButton.setOnClickListener(v -> settingDialog.show());
+
+        goBackButton = findViewById(R.id.gbButton);
+        goBackButton.setOnClickListener(_view -> goBackToMain());
+        textView = findViewById(R.id.textView);
 
         initClientConnection(topic, arrayAdapter);
         startButton = findViewById(R.id.startButton);
