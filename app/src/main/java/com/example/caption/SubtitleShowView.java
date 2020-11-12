@@ -34,7 +34,6 @@ public class SubtitleShowView extends AppCompatActivity
     private String serverPort;
     private Button goBackButton;
     private Button startButton;
-    private TextView textView;
     private ServiceClient client;
     private AlertDialog alertDialog;
     private SeekBar subTitleSizeSeekBar;
@@ -60,7 +59,7 @@ public class SubtitleShowView extends AppCompatActivity
     private void initClientConnection(String topic, ArrayAdapter<String> arrayAdapter)
     {
         Log.d(serverAddr, serverPort);
-        client = new ServiceClient(arrayAdapter, textView);
+        client = new ServiceClient(arrayAdapter);
         boolean connected = client.initConnection(topic, serverAddr, Integer.parseInt(serverPort));
         if (TESTING)
             return;
@@ -141,7 +140,6 @@ public class SubtitleShowView extends AppCompatActivity
 
         goBackButton = findViewById(R.id.gbButton);
         goBackButton.setOnClickListener(_view -> goBackToMain());
-        textView = findViewById(R.id.textView);
 
         initClientConnection(topic, arrayAdapter);
         startButton = findViewById(R.id.startButton);

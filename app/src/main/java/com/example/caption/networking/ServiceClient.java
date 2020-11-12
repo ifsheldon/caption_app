@@ -31,7 +31,6 @@ public class ServiceClient extends Thread implements IServerClient
     private static final String LOG_VERBOSE = "Client VERBOSE";
     private static final String LOG_DEBUG = "Client DEBUG";
     private final ArrayAdapter<String> arrayAdapter;
-    private final TextView textView;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
     private final AtomicBoolean stop = new AtomicBoolean(true);
     private final AtomicBoolean terminate = new AtomicBoolean(false);
@@ -41,10 +40,9 @@ public class ServiceClient extends Thread implements IServerClient
 
     private StompClient mStompClient;
 
-    public ServiceClient(ArrayAdapter<String> arrayAdapter, TextView textView)
+    public ServiceClient(ArrayAdapter<String> arrayAdapter)
     {
         this.arrayAdapter = arrayAdapter;
-        this.textView = textView;
     }
 
     public void stopClient()
@@ -126,10 +124,7 @@ public class ServiceClient extends Thread implements IServerClient
                             {
                                 subtitleStorage.add(text, true);
                             }
-                            //TODO: check whether it works
-//                    arrayAdapter.clear();
-//                    arrayAdapter.add(subtitleStorage.get());
-                            textView.setText(subtitleStorage.get());
+                            arrayAdapter.add(subtitleStorage.get());
                         } else
                         {
                             Log.v(LOG_VERBOSE, "Not subtitle!");
