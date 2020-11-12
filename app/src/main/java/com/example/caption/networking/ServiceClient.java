@@ -29,6 +29,7 @@ public class ServiceClient extends Thread implements IServerClient
     private int PORT = 23330;
 
     private static final String LOG_VERBOSE = "Client VERBOSE";
+    private static final String LOG_ERROR = "Client ERROR";
     private static final String LOG_DEBUG = "Client DEBUG";
     private final ArrayAdapter<String> arrayAdapter;
     private final TextView textView;
@@ -85,7 +86,7 @@ public class ServiceClient extends Thread implements IServerClient
                     break;
 
                 case ERROR:
-                    Log.e(LOG_VERBOSE, "Error", lifecycleEvent.getException());
+                    Log.e(LOG_ERROR, "Error", lifecycleEvent.getException());
                     connectSuccess.set(false);
                     break;
 
@@ -138,9 +139,9 @@ public class ServiceClient extends Thread implements IServerClient
                     }
                     catch (IOException e)
                     {
-                        Log.e(LOG_DEBUG, e.getMessage());
+                        Log.e(LOG_ERROR, e.getMessage());
                     }
-                }, throwable -> Log.e(LOG_DEBUG, "err!", throwable));
+                }, throwable -> Log.e(LOG_ERROR, "err!", throwable));
     }
 
     @Override
