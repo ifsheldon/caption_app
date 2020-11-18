@@ -23,6 +23,13 @@ class SubtitleStorage
     long startTime = 0L;
     int totalWordCount = 0;
 
+    Queue<String> allFinishedSentences = new LinkedList<>();
+
+    public Queue<String> getAllFinishedSentences()
+    {
+        return allFinishedSentences;
+    }
+
     public double getCurrentSpeed() {
         return currentSpeed;
     }
@@ -62,6 +69,10 @@ class SubtitleStorage
 
     public void add(String tr, boolean sentenceFinished){
         System.out.println("tr="+tr+" finish"+sentenceFinished);
+
+        if(sentenceFinished){
+            allFinishedSentences.offer(tr);
+        }
 
         if(currentBegin==0){
             currentBegin = System.currentTimeMillis();
