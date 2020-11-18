@@ -22,9 +22,6 @@ import ua.naiksoftware.stomp.StompClient;
 @SuppressLint("CheckResult")
 public class ServiceClient extends Thread implements IServerClient
 {
-    private String SERVER_ADDR = "10.0.2.2";
-    private int PORT = 23330;
-
     private static final String LOG_VERBOSE = "Client VERBOSE";
     private static final String LOG_ERROR = "Client ERROR";
     private static final String LOG_DEBUG = "Client DEBUG";
@@ -66,10 +63,7 @@ public class ServiceClient extends Thread implements IServerClient
     {
 
         this.topic = topic;
-        this.SERVER_ADDR = serverAddr;
-        this.PORT = serverPort;
-
-        String connectionURL = String.format("ws://%s:%d/gs-guide-websocket/websocket", this.SERVER_ADDR, this.PORT);
+        String connectionURL = String.format("ws://%s:%d/gs-guide-websocket/websocket", serverAddr, serverPort);
 
         mStompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, connectionURL);
 
