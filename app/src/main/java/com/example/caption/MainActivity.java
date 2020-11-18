@@ -55,9 +55,7 @@ public class MainActivity extends AppCompatActivity
                 alertDialog.show();
             else
             {
-//                topicInputText.getText().clear();
                 switchToSubtitleView.putExtra(TOPIC_KEY, topic);
-
                 startActivity(switchToSubtitleView);
             }
         });

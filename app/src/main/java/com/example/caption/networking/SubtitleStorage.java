@@ -164,7 +164,6 @@ class SubtitleStorage
         // 从对应位置开始重排
         // 需要同时更新两个结构的数据
         int writingLine = redrawFromLineNumber;
-//        System.out.println(writingLine);
         for (int i = firstDifferenceIndex; i < currentSentenceWords.length; i++) {
 
             String currentWord = currentSentenceWords[i];
