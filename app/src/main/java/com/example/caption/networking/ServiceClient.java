@@ -40,6 +40,7 @@ public class ServiceClient extends Thread implements IServerClient
     private String topic;
 
     private StompClient mStompClient;
+    private final Object monitor = new Object();
 
     public ServiceClient(ArrayAdapter<String> arrayAdapter)
     {
@@ -76,26 +77,41 @@ public class ServiceClient extends Thread implements IServerClient
         AtomicBoolean connectSuccess = new AtomicBoolean(true);
 
         mStompClient.lifecycle().subscribe(lifecycleEvent -> {
-            switch (lifecycleEvent.getType())
+            synchronized (monitor)
             {
+                switch (lifecycleEvent.getType())
+                {
 
-                case OPENED:
-                    Log.d(LOG_VERBOSE, "Stomp connection opened");
-                    break;
+                    case OPENED:
+                        Log.d(LOG_VERBOSE, "Stomp connection opened");
+                        mStompClient.notify();
+                        break;
 
-                case ERROR:
-                    Log.e(LOG_ERROR, "Error", lifecycleEvent.getException());
-                    connectSuccess.set(false);
-                    break;
+                    case ERROR:
+                        Log.e(LOG_ERROR, "Error", lifecycleEvent.getException());
+                        mStompClient.notify();
+                        connectSuccess.set(false);
+                        break;
 
-                case CLOSED:
-                    Log.d(LOG_VERBOSE, "Stomp connection closed");
-                    break;
+                    case CLOSED:
+                        Log.d(LOG_VERBOSE, "Stomp connection closed");
+                        break;
+                }
             }
         });
 
         mStompClient.connect();
+        synchronized (monitor)
+        {
+            try
+            {
+                mStompClient.wait();
+            }
+            catch (InterruptedException e)
+            {
 
+            }
+        }
         return connectSuccess.get();
     }
 
@@ -125,7 +141,7 @@ public class ServiceClient extends Thread implements IServerClient
                             {
                                 subtitleStorage.add(text, true);
                             }
-                            arrayAdapter.add(subtitleStorage.get());
+                            arrayAdapter.insert(subtitleStorage.get(), 0);
                         } else
                         {
                             Log.v(LOG_VERBOSE, "Not subtitle!");
