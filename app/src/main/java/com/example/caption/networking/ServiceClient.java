@@ -84,12 +84,12 @@ public class ServiceClient extends Thread implements IServerClient
 
                     case OPENED:
                         Log.d(LOG_VERBOSE, "Stomp connection opened");
-                        mStompClient.notify();
+                        monitor.notify();
                         break;
 
                     case ERROR:
                         Log.e(LOG_ERROR, "Error", lifecycleEvent.getException());
-                        mStompClient.notify();
+                        monitor.notify();
                         connectSuccess.set(false);
                         break;
 
@@ -105,7 +105,7 @@ public class ServiceClient extends Thread implements IServerClient
         {
             try
             {
-                mStompClient.wait();
+                monitor.wait();
             }
             catch (InterruptedException e)
             {
