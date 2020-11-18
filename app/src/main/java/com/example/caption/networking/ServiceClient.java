@@ -3,12 +3,14 @@ package com.example.caption.networking;
 import android.annotation.SuppressLint;
 import android.util.Log;
 import android.widget.ArrayAdapter;
+import android.widget.TextView;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -27,6 +29,7 @@ public class ServiceClient extends Thread implements IServerClient
     private static final String LOG_ERROR = "Client ERROR";
     private static final String LOG_DEBUG = "Client DEBUG";
     private final ArrayAdapter<String> arrayAdapter;
+    private final TextView realtimeText;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
     private final AtomicBoolean stop = new AtomicBoolean(true);
     private final AtomicBoolean terminate = new AtomicBoolean(false);
@@ -37,9 +40,10 @@ public class ServiceClient extends Thread implements IServerClient
     private StompClient mStompClient;
     private final Object monitor = new Object();
 
-    public ServiceClient(ArrayAdapter<String> arrayAdapter)
+    public ServiceClient(ArrayAdapter<String> arrayAdapter, TextView realtimeText)
     {
         this.arrayAdapter = arrayAdapter;
+        this.realtimeText = realtimeText;
     }
 
     public void stopClient()
@@ -112,6 +116,7 @@ public class ServiceClient extends Thread implements IServerClient
 
     private void subscribe(String topic)
     {
+        Queue<String> fullSentences = subtitleStorage.getAllFinishedSentences();
         mStompClient.topic("/topic/" + topic)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -136,7 +141,10 @@ public class ServiceClient extends Thread implements IServerClient
                             {
                                 subtitleStorage.add(text, true);
                             }
-                            arrayAdapter.insert(subtitleStorage.get(), 0);
+                            realtimeText.setText(subtitleStorage.get());
+                            String sentence = fullSentences.poll();
+                            if (sentence!=null)
+                                arrayAdapter.insert(sentence, 0);
                         } else
                         {
                             Log.v(LOG_VERBOSE, "Not subtitle!");

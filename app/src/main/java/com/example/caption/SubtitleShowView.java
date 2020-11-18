@@ -21,8 +21,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.caption.networking.ServiceClient;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 
 public class SubtitleShowView extends AppCompatActivity
@@ -40,6 +40,7 @@ public class SubtitleShowView extends AppCompatActivity
     private boolean started;
     private AlertDialog settingDialog;
     private ListView textList;
+    private TextView subtitleRealtime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -59,7 +60,7 @@ public class SubtitleShowView extends AppCompatActivity
     private void initClientConnection(String topic, ArrayAdapter<String> arrayAdapter)
     {
         Log.d(serverAddr, serverPort);
-        client = new ServiceClient(arrayAdapter);
+        client = new ServiceClient(arrayAdapter, subtitleRealtime);
         boolean connected = client.initConnection(topic, serverAddr, Integer.parseInt(serverPort));
         if (TESTING)
             return;
@@ -80,8 +81,9 @@ public class SubtitleShowView extends AppCompatActivity
     private void initViewComponents()
     {
         String[] tes = {"PlaceHolder1", "PlaceHolder2"};
-        ArrayList<String> test = new ArrayList<>(Arrays.asList(tes));
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, test);
+        subtitleRealtime = findViewById(R.id.subtitle_realtime);
+        LinkedList<String> sentenceList = new LinkedList<>(Arrays.asList(tes));
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, sentenceList);
         textList = findViewById(R.id.textList);
         textList.setAdapter(arrayAdapter);
 
@@ -124,11 +126,13 @@ public class SubtitleShowView extends AppCompatActivity
         });
         builder.setTitle("Settings");
         builder.setPositiveButton("OK", (_dialog, _which) -> {
+            int size = subTitleSizeSeekBar.getProgress();
             for (int i = 0; i < textList.getChildCount(); i++)
             {
                 TextView v = (TextView) textList.getChildAt(i);
-                v.setTextSize(TypedValue.COMPLEX_UNIT_DIP, subTitleSizeSeekBar.getProgress());
+                v.setTextSize(TypedValue.COMPLEX_UNIT_DIP, (int) (size / 1.5));
             }
+            subtitleRealtime.setTextSize(size);
         });
         builder.setCancelable(false);
         builder.setNegativeButton("Cancel", null);

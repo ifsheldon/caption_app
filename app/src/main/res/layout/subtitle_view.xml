@@ -32,11 +32,16 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/subtitle_realtime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20dp" />
 
     <ListView
         android:id="@+id/textList"
         android:layout_width="wrap_content"
-        android:layout_height="591dp" />
+        android:layout_height="wrap_content" />
 
 
 </LinearLayout>
