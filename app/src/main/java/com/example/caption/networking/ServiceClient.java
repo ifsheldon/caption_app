@@ -32,7 +32,6 @@ public class ServiceClient extends Thread implements IServerClient
     private static final String LOG_ERROR = "Client ERROR";
     private static final String LOG_DEBUG = "Client DEBUG";
     private final ArrayAdapter<String> arrayAdapter;
-    private final TextView textView;
     private final SubtitleStorage subtitleStorage = new SubtitleStorage();
     private final AtomicBoolean stop = new AtomicBoolean(true);
     private final AtomicBoolean terminate = new AtomicBoolean(false);
@@ -41,11 +40,11 @@ public class ServiceClient extends Thread implements IServerClient
     private String topic;
 
     private StompClient mStompClient;
+    private final Object monitor = new Object();
 
-    public ServiceClient(ArrayAdapter<String> arrayAdapter, TextView textView)
+    public ServiceClient(ArrayAdapter<String> arrayAdapter)
     {
         this.arrayAdapter = arrayAdapter;
-        this.textView = textView;
     }
 
     public void stopClient()
@@ -78,26 +77,41 @@ public class ServiceClient extends Thread implements IServerClient
         AtomicBoolean connectSuccess = new AtomicBoolean(true);
 
         mStompClient.lifecycle().subscribe(lifecycleEvent -> {
-            switch (lifecycleEvent.getType())
+            synchronized (monitor)
             {
+                switch (lifecycleEvent.getType())
+                {
 
-                case OPENED:
-                    Log.d(LOG_VERBOSE, "Stomp connection opened");
-                    break;
+                    case OPENED:
+                        Log.d(LOG_VERBOSE, "Stomp connection opened");
+                        monitor.notify();
+                        break;
 
-                case ERROR:
-                    Log.e(LOG_ERROR, "Error", lifecycleEvent.getException());
-                    connectSuccess.set(false);
-                    break;
+                    case ERROR:
+                        Log.e(LOG_ERROR, "Error", lifecycleEvent.getException());
+                        monitor.notify();
+                        connectSuccess.set(false);
+                        break;
 
-                case CLOSED:
-                    Log.d(LOG_VERBOSE, "Stomp connection closed");
-                    break;
+                    case CLOSED:
+                        Log.d(LOG_VERBOSE, "Stomp connection closed");
+                        break;
+                }
             }
         });
 
         mStompClient.connect();
+        synchronized (monitor)
+        {
+            try
+            {
+                monitor.wait();
+            }
+            catch (InterruptedException e)
+            {
 
+            }
+        }
         return connectSuccess.get();
     }
 
@@ -127,10 +141,7 @@ public class ServiceClient extends Thread implements IServerClient
                             {
                                 subtitleStorage.add(text, true);
                             }
-                            //TODO: check whether it works
-//                    arrayAdapter.clear();
-//                    arrayAdapter.add(subtitleStorage.get());
-                            textView.setText(subtitleStorage.get());
+                            arrayAdapter.insert(subtitleStorage.get(), 0);
                         } else
                         {
                             Log.v(LOG_VERBOSE, "Not subtitle!");
