@@ -3,21 +3,16 @@ package com.example.caption.networking;
 import android.annotation.SuppressLint;
 import android.util.Log;
 import android.widget.ArrayAdapter;
-import android.widget.TextView;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.w3c.dom.Text;
-
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 
-import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
 import ua.naiksoftware.stomp.Stomp;
 import ua.naiksoftware.stomp.StompClient;

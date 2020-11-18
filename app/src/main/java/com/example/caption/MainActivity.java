@@ -14,8 +14,6 @@ public class MainActivity extends AppCompatActivity
     public static String TOPIC_KEY = "TOPIC_KEY";
     public static String SERVER_ADDR_KEY = "SERVER_ADDR";
     public static String PORT_KEY = "PORT";
-    public static String SERVER_ADDR;
-    public static String PORT;
     private static final String LOG_VERBOSE = "MainActivity VERBOSE";
     private AlertDialog alertDialog;
     private Button connectButton;
