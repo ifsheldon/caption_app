@@ -80,7 +80,7 @@ public class SubtitleShowView extends AppCompatActivity
     @SuppressLint("CheckResult")
     private void initViewComponents()
     {
-        String[] tes = {"PlaceHolder1", "PlaceHolder2"};
+        String[] tes = {};
         subtitleRealtime = findViewById(R.id.subtitle_realtime);
         LinkedList<String> sentenceList = new LinkedList<>(Arrays.asList(tes));
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, R.layout.text_item, sentenceList);
@@ -106,6 +106,8 @@ public class SubtitleShowView extends AppCompatActivity
                 this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         });
         subTitleSizeSeekBar = dialogView.findViewById(R.id.subtitle_size_seekbar);
+        subTitleSizeSeekBar.setProgress(40);
+        demonstration_text.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 40);
         subTitleSizeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
         {
             @Override
@@ -127,11 +129,6 @@ public class SubtitleShowView extends AppCompatActivity
         builder.setTitle("Settings");
         builder.setPositiveButton("OK", (_dialog, _which) -> {
             int size = subTitleSizeSeekBar.getProgress();
-            for (int i = 0; i < textList.getChildCount(); i++)
-            {
-                TextView v = (TextView) textList.getChildAt(i);
-                v.setTextSize(TypedValue.COMPLEX_UNIT_DIP, (int) (size / 1.5));
-            }
             subtitleRealtime.setTextSize(size);
         });
         builder.setCancelable(false);
